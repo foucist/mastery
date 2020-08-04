@@ -2,17 +2,23 @@ defmodule TemplateTest do
   use ExUnit.Case
   use QuizBuilders
 
-  test "building compiles the raw template" do
+  def setup_template(context) do
     fields = template_fields()
     template = Template.new(fields)
 
-    assert is_nil(Keyword.get(fields, :compiled))
-    assert not is_nil(template.compiled)
+    {:ok, Map.put(context, :setup_template, %{fields: fields, template: template})}
   end
 
-  test "question accepts template" do
-    fields = template_fields()
-    template = Template.new(fields)
-    Question.new(template)
+  describe "a group of tests needing :setup_template" do
+    setup [:setup_template]
+
+    test "building compiles the raw template", %{setup_template: data} do
+      assert is_nil(Keyword.get(data.fields, :compiled))
+      assert not is_nil(data.template.compiled)
+    end
+
+    test "question builds template", %{setup_template: data} do
+      Question.new(data.template)
+    end
   end
 end
