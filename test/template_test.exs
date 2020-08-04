@@ -5,7 +5,14 @@ defmodule TemplateTest do
   test "building compiles the raw template" do
     fields = template_fields()
     template = Template.new(fields)
+
     assert is_nil(Keyword.get(fields, :compiled))
     assert not is_nil(template.compiled)
+  end
+
+  test "question accepts template" do
+    fields = template_fields()
+    template = Template.new(fields)
+    Question.new(template)
   end
 end

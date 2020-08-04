@@ -5,7 +5,7 @@ defmodule Mastery.Core.Question do
 
   def new(%Template{} = template) do
     template.generators
-    |> Enum.map(&build_substitution/1)
+    |> build_substitutions()
     |> evaluate(template)
   end
 
@@ -23,8 +23,10 @@ defmodule Mastery.Core.Question do
     |> elem(0)
   end
 
-  defp build_substitution({name, choices_or_generator}) do
-    {name, choose(choices_or_generator)}
+  def build_substitutions(generators) do
+    Enum.map(generators, fn {name, choices_or_generator} ->
+      {name, choose(choices_or_generator)}
+    end)
   end
 
   defp choose(choices) when is_list(choices) do
