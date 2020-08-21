@@ -2,17 +2,17 @@ defmodule Mastery.Boundary.Validator do
   def check(true = _valid, _message), do: :ok
   def check(false = _valid, message), do: message
 
+  def require(errors, fields, field_name, validator) do
+    present = Map.has_key?(fields, field_name)
+    check_required_field(present, fields, errors, field_name, validator)
+  end
+
   def optional(errors, fields, field_name, validator) do
     if Map.has_key?(fields, field_name) do
       require(errors, fields, field_name, validator)
     else
       errors
     end
-  end
-
-  def require(errors, fields, field_name, validator) do
-    present = Map.has_key?(fields, field_name)
-    check_required_field(present, fields, errors, field_name, validator)
   end
 
   defp check_required_field(true = _present, fields, errors, field_name, f) do
