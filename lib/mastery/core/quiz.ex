@@ -3,22 +3,20 @@ defmodule Mastery.Core.Quiz do
 
   defstruct title: nil,
             mastery: 3,
-            current_question: nil,
-            last_response: nil,
             templates: %{},
             used: [],
-            mastered: [],
-            record: %{}
+            current_question: nil,
+            last_response: nil,
+            record: %{},
+            mastered: []
 
   def new(fields) do
     struct!(__MODULE__, fields)
   end
 
-  ####
-  # Add Template
-
   def add_template(quiz, fields) do
     template = Template.new(fields)
+
     templates = update_in(quiz.templates, [template.category], &add_to_list_or_nil(&1, template))
 
     %{quiz | templates: templates}
@@ -26,9 +24,6 @@ defmodule Mastery.Core.Quiz do
 
   defp add_to_list_or_nil(nil, template), do: [template]
   defp add_to_list_or_nil(templates, template), do: [template | templates]
-
-  ####
-  # Select Question
 
   def select_question(%__MODULE__{templates: t}) when map_size(t) == 0, do: nil
 
@@ -80,30 +75,26 @@ defmodule Mastery.Core.Quiz do
   defp add_template_to_field(quiz, field) do
     template = template(quiz)
     list = Map.get(quiz, field)
+
     Map.put(quiz, field, [template | list])
   end
 
   defp reset_template_cycle(%{templates: templates, used: used} = quiz)
        when map_size(templates) == 0 do
-    %__MODULE__{
-      quiz
-      | templates: Enum.group_by(used, fn template -> template.category end),
-        used: []
-    }
+    new_templates = Enum.group_by(used, fn template -> template.category end)
+
+    %__MODULE__{quiz | templates: new_templates, used: []}
   end
 
   defp reset_template_cycle(quiz), do: quiz
 
-  ####
-  # Answer Question
-
   def answer_question(quiz, %Response{correct: true} = response) do
-    new_quiz =
+    quiz =
       quiz
       |> inc_record
       |> save_response(response)
 
-    maybe_advance(new_quiz, mastered?(new_quiz))
+    next_quiz(quiz, mastered?(quiz))
   end
 
   def answer_question(quiz, %Response{correct: false} = response) do
@@ -117,17 +108,13 @@ defmodule Mastery.Core.Quiz do
     Map.put(quiz, :record, new_record)
   end
 
-  def save_response(quiz, response) do
-    Map.put(quiz, :last_response, response)
-  end
-
   def mastered?(quiz) do
     score = Map.get(quiz.record, template(quiz).name, 0)
     score == quiz.mastery
   end
 
-  defp maybe_advance(quiz, false = _mastered), do: quiz
-  defp maybe_advance(quiz, true = _mastered), do: advance(quiz)
+  defp next_quiz(quiz, false = _mastered), do: quiz
+  defp next_quiz(quiz, true = _mastered), do: advance(quiz)
 
   def advance(quiz) do
     quiz
@@ -142,5 +129,9 @@ defmodule Mastery.Core.Quiz do
 
   defp reset_used(%{current_question: question} = quiz) do
     Map.put(quiz, :used, List.delete(quiz.used, question.template))
+  end
+
+  def save_response(quiz, response) do
+    Map.put(quiz, :last_response, response)
   end
 end
