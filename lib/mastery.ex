@@ -41,4 +41,31 @@ defmodule Mastery do
   def answer_question(session, answer) do
     GenServer.call(session, {:answer_question, answer})
   end
+
+  alias Mastery.Examples.Hiragana
+
+  def start_hiragana do
+    Mastery.start_quiz_manager()
+    Mastery.build_quiz(Hiragana.quiz_fields())
+    Mastery.add_template(Hiragana.quiz().title, Hiragana.template_fields())
+    session = Mastery.take_quiz(Hiragana.quiz().title, "mathy@email.com")
+    q = Mastery.select_question(session)
+    question_answer_loop(q, session)
+  end
+
+  def question_answer_loop(question, session) do
+    a = IO.gets("What is this hiragana: #{question}?\n")
+
+    case Mastery.answer_question(session, a) do
+      {q, r} ->
+        display_response(r) |> IO.puts()
+        question_answer_loop(q, session)
+
+      :finished ->
+        "Correct! You have achieved mastery"
+    end
+  end
+
+  def display_response(true), do: "Correct"
+  def display_response(false), do: "Wrong"
 end
