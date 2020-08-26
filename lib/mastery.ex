@@ -27,19 +27,19 @@ defmodule Mastery do
 
   def take_quiz(title, email) do
     with %Quiz{} = quiz <- QuizManager.lookup_quiz_by_title(title),
-         {:ok, session} <- GenServer.start_link(QuizSession, {quiz, email}) do
-      session
+         {:ok, pid} <- GenServer.start_link(QuizSession, {quiz, email}) do
+      pid
     else
       error -> error
     end
   end
 
-  def select_question(session) do
-    GenServer.call(session, :select_question)
+  def select_question(pid) do
+    GenServer.call(pid, :select_question)
   end
 
-  def answer_question(session, answer) do
-    GenServer.call(session, {:answer_question, answer})
+  def answer_question(pid, answer) do
+    GenServer.call(pid, {:answer_question, answer})
   end
 
   alias Mastery.Examples.Hiragana
@@ -48,18 +48,18 @@ defmodule Mastery do
     Mastery.start_quiz_manager()
     Mastery.build_quiz(Hiragana.quiz_fields())
     Mastery.add_template(Hiragana.quiz().title, Hiragana.template_fields())
-    session = Mastery.take_quiz(Hiragana.quiz().title, "mathy@email.com")
-    q = Mastery.select_question(session)
-    question_answer_loop(q, session)
+    pid = Mastery.take_quiz(Hiragana.quiz().title, "mathy@email.com")
+    q = Mastery.select_question(pid)
+    question_answer_loop(q, pid)
   end
 
-  def question_answer_loop(question, session) do
+  def question_answer_loop(question, pid) do
     a = IO.gets("What is this hiragana: #{question}?\n")
 
-    case Mastery.answer_question(session, a) do
+    case Mastery.answer_question(pid, a) do
       {q, r} ->
         display_response(r) |> IO.puts()
-        question_answer_loop(q, session)
+        question_answer_loop(q, pid)
 
       :finished ->
         "Correct! You have achieved mastery"
