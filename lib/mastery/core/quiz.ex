@@ -5,7 +5,7 @@ defmodule Mastery.Core.Quiz do
             mastery: 3,
             templates: %{},
             used: [],
-            current_question: nil,
+            current_questions: [],
             last_response: nil,
             record: %{},
             mastered: []
@@ -29,16 +29,20 @@ defmodule Mastery.Core.Quiz do
 
   def select_question(quiz) do
     quiz
-    |> pick_current_question
-    |> move_template(:used)
-    |> reset_template_cycle
+    |> pick_current_questions
+
+    # |> move_template(:used)
+    # |> reset_template_cycle
   end
 
-  defp pick_current_question(quiz) do
-    Map.put(quiz, :current_question, select_a_random_question(quiz))
+  defp pick_current_questions(quiz) do
+    Map.put(quiz, :current_questions, fill_questions(quiz.current_questions, quiz))
   end
 
-  defp select_a_random_question(quiz) do
+  defp fill_questions([], quiz), do: [get_random_question(quiz), get_random_question(quiz)]
+  defp fill_questions([_curr, next], quiz), do: [next, get_random_question(quiz)]
+
+  defp get_random_question(quiz) do
     quiz.templates
     |> Enum.random()
     |> elem(1)
@@ -52,7 +56,7 @@ defmodule Mastery.Core.Quiz do
     |> add_template_to_field(field)
   end
 
-  defp template(quiz), do: quiz.current_question.template
+  defp template(%{current_questions: [question, _]} = _quiz), do: question.template
 
   defp remove_template_from_category(quiz) do
     template = template(quiz)
@@ -103,7 +107,7 @@ defmodule Mastery.Core.Quiz do
     |> save_response(response)
   end
 
-  defp inc_record(%{current_question: question} = quiz) do
+  defp inc_record(%{current_questions: [question, _]} = quiz) do
     new_record = Map.update(quiz.record, question.template.name, 1, &(&1 + 1))
     Map.put(quiz, :record, new_record)
   end
@@ -123,11 +127,11 @@ defmodule Mastery.Core.Quiz do
     |> reset_used
   end
 
-  defp reset_record(%{current_question: question} = quiz) do
+  defp reset_record(%{current_questions: [question, _]} = quiz) do
     Map.put(quiz, :record, Map.delete(quiz.record, question.template.name))
   end
 
-  defp reset_used(%{current_question: question} = quiz) do
+  defp reset_used(%{current_questions: [question, _]} = quiz) do
     Map.put(quiz, :used, List.delete(quiz.used, question.template))
   end
 

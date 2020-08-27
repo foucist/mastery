@@ -16,8 +16,9 @@ defmodule Mastery.Boundary.QuizSession do
 
   def handle_call(:select_question, _from, {quiz, email}) do
     quiz = Quiz.select_question(quiz)
+    asked = Enum.map(quiz.current_questions, & &1.asked)
 
-    {:reply, quiz.current_question.asked, {quiz, email}}
+    {:reply, asked, {quiz, email}}
   end
 
   def handle_call({:answer_question, answer}, _from, {quiz, email}) do
@@ -32,6 +33,7 @@ defmodule Mastery.Boundary.QuizSession do
   defp next_or_done(nil = _quiz, _email), do: {:stop, :normal, :finished, nil}
 
   defp next_or_done(quiz, email) do
-    {:reply, {quiz.current_question.asked, quiz.last_response.correct}, {quiz, email}}
+    asked = Enum.map(quiz.current_questions, & &1.asked)
+    {:reply, {asked, quiz.last_response.correct}, {quiz, email}}
   end
 end

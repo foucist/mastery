@@ -53,8 +53,8 @@ defmodule Mastery do
     question_answer_loop(q, pid)
   end
 
-  def question_answer_loop(question, pid) do
-    a = IO.gets("What is this hiragana: #{question}?\n")
+  def question_answer_loop([current_q, next_q], pid) do
+    a = IO.gets("What is this hiragana: #{current_q}?             #{next_q}\n")
 
     case Mastery.answer_question(pid, a) do
       {q, r} ->
